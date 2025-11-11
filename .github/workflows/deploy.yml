@@ -1,0 +1,34 @@
+name: Snowflake Deploy
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v3
+
+      - name: Run SnowSQL scripts
+        run: |
+          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ secrets.SNOWFLAKE_USER }} \
+                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
+                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
+                  -f tables/employee_table_create.sql
+
+          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ secrets.SNOWFLAKE_USER }} \
+                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
+                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
+                  -f tables/employee_table_insert.sql
+
+          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
+                  -u ${{ secrets.SNOWFLAKE_USER }} \
+                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
+                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
+                  -f tables/employee_table_update.sql
