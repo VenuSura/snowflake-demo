@@ -3,32 +3,31 @@ name: Snowflake Deploy
 on:
   push:
     branches:
-      - main
+      - main  # Trigger workflow on push to main branch
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout repo
+      - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Run SnowSQL scripts
+      - name: Install SnowSQL
         run: |
-          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
-                  -u ${{ secrets.SNOWFLAKE_USER }} \
-                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
-                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
-                  -f tables/employee_table_create.sql
+          curl -O https://sfc-repo.snowflakecomputing.com/snowsql/bootstrap/1.2/linux_x86_64/snowsql-1.2.27-linux_x86_64.bash
+          bash snowsql-1.2.27-linux_x86_64.bash
+          export PATH=$PATH:$HOME/snowsql/bin
 
-          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
-                  -u ${{ secrets.SNOWFLAKE_USER }} \
-                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
-                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
-                  -f tables/employee_table_insert.sql
-
-          snowsql -a ${{ secrets.SNOWFLAKE_ACCOUNT }} \
-                  -u ${{ secrets.SNOWFLAKE_USER }} \
-                  -p ${{ secrets.SNOWFLAKE_PASSWORD }} \
-                  -d DEMO_DB -s PUBLIC -w COMPUTE_WH \
-                  -f tables/employee_table_update.sql
+      - name: Run SQL scripts in Snowflake
+        env:
+          SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
+          SNOWFLAKE_USER: ${{ secrets.SNOWFLAKE_USER }}
+          SNOWFLAKE_PASSWORD: ${{ secrets.SNOWFLAKE_PASSWORD }}
+          SNOWFLAKE_WAREHOUSE: ${{ secrets.SNOWFLAKE_WAREHOUSE }}
+          SNOWFLAKE_DATABASE: ${{ secrets.SNOWFLAKE_DATABASE }}
+          SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
+        run: |
+          snowsql -a $SNOWFLAKE_ACCOUNT -u $SNOWFLAKE_USER -p $SNOWFLAKE_PASSWORD -w $SNOWFLAKE_WAREHOUSE -d $SNOWFLAKE_DATABASE -s $SNOWFLAKE_SCHEMA -f tables/employee_table_create.sql
+          snowsql -a $SNOWFLAKE_ACCOUNT -u $SNOWFLAKE_USER -p $SNOWFLAKE_PASSWORD -w $SNOWFLAKE_WAREHOUSE -d $SNOWFLAKE_DATABASE -s $SNOWFLAKE_SCHEMA -f tables/employee_table_insert.sql
+          snowsql -a $SNOWFLAKE_ACCOUNT -u $SNOWFLAKE_USER -p $SNOWFLAKE_PASSWORD -w $SNOWFLAKE_WAREHOUSE -d $SNOWFLAKE_DATABASE -s $SNOWFLAKE_SCHEMA -f tables/employee_table_update.sql
